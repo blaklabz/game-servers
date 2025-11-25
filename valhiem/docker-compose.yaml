@@ -1,0 +1,59 @@
+version: "1.3"
+
+services:
+  valheim:
+    image: lloesche/valheim-server
+    container_name: valheim-server-of-doom-5
+    restart: always
+
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+
+    volumes:
+      - /root/valheim-server/config:/config
+      - /root/valheim-server/data:/opt/valheim
+
+    environment:
+      # --- core server settings (from your inspect) ---
+      SERVER_NAME: "AQ-Death-Heim"
+      WORLD_NAME: "AQ-Death-Heim"
+      SERVER_PASS: "charcoal"
+      SERVER_ARGS: "-console -modifier combat veryeasy -modifier raids muchless -setkey nobuildcost -setkey playerevents"
+
+      # --- update / restart behavior (from your inspect) ---
+      UPDATE_CRON: "0 */12 * * *"
+      UPDATE_IF_IDLE: "true"
+      RESTART_CRON: "0 4 * * *"
+      RESTART_IF_IDLE: "true"
+
+      TZ: "America/New_York"
+
+      # --- Discord webhook integration ---
+
+      DISCORD_WEBHOOK: ""
+
+      # Discord messages
+      DISCORD_START_MESSAGE: "✅ Valheim server **$${SERVER_NAME}** has started."
+      POST_START_HOOK: 'curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$(eval echo $$DISCORD_START_MESSAGE)\"}" "$$DISCORD_WEBHOOK"'
+
+      DISCORD_STOP_MESSAGE: "🛑 Valheim server **$${SERVER_NAME}** has stopped."
+      PRE_SERVER_SHUTDOWN_HOOK: 'curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$(eval echo $$DISCORD_STOP_MESSAGE)\"}" "$$DISCORD_WEBHOOK"'
+
+      DISCORD_RESTART_MESSAGE: " 🔄 Valheim server **$${SERVER_NAME}** is restarting."
+      PRE_RESTART_HOOK: 'curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$(eval echo $$DISCORD_RESTART_MESSAGE)\"}" "$$DISCORD_WEBHOOK"'
+
+      DISCORD_UPDATE_MESSAGE: " 📦Valheim server **$${SERVER_NAME}** is updating to latest version."
+      POST_UPDATE_CHECK_HOOK: 'curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$(eval echo $$DISCORD_UPDATE_MESSAGE)\"}" "$$DISCORD_WEBHOOK"'
+
+      DISCORD_BACKUP_MESSAGE: " 💾Valheim server **$${SERVER_NAME}** is backing up."
+      POST_BACKUP_HOOK: 'curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$(eval echo $$DISCORD_BACKUP_MESSAGE)\"}" "$$DISCORD_WEBHOOK"'
+
+      VALHEIM_LOG_FILTER_CONTAINS_Spawned: "Got character ZDOID from"
+      ON_VALHEIM_LOG_FILTER_CONTAINS_Spawned: '{ read l; l=$${l//*ZDOID from /}; l=$${l// :*/}; msg=" 🚪Player $$l spawned into the world"; curl -sfSL -X POST -H "Content-Type: application/json" -d "{\"username\":\"Valheim\",\"content\":\"$$msg\"}" "$$DISCORD_WEBHOOK"; }'
+
+      # Some versions also support a generic message template, e.g.:
+      # DISCORD_WEBHOOK_MESSAGE: "Valheim server **${SERVER_NAME}** status: {{status}}"
+
+    cap_add:
+      - sys_nice

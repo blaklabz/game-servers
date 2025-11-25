@@ -1,0 +1,29 @@
+version: "1.0"
+
+services:
+  enshrouded:
+    build: .
+    image: mbround18/enshrouded-docker:latest
+    container_name: enshrouded
+    restart: unless-stopped
+    environment:
+      TZ: "America/New_York"
+      SERVER_NAME: "AQ Shroud"
+      ADMIN_PASSWORD: "charcoal1"
+      PASSWORD: "charcoal"
+      # Discord Webhook
+      WEBHOOK_URL: ""
+      WEBHOOK_ENABLED: "true"
+      # Backup schedule:
+      AUTO_UPDATE: "true"
+      UPDATE_ON_START: "true"
+      AUTO_UPDATE_SCHEDULE: "0 4,16 * * *"
+      SCHEDULED_RESTART: "true"
+      SCHEDULED_RESTART_SCHEDULE: "5 4,16 * * *"
+    ports:
+      - "15636:15636/udp" # game port
+      - "15636:15636/tcp"
+      - "15637:15637/udp" # query port
+      - "15637:15637/tcp"
+    volumes:
+      - ./data:/home/steam/enshrouded # saves + config live here
