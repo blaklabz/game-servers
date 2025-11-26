@@ -1,0 +1,94 @@
+services:
+  vrising:
+    image: trueosiris/vrising
+    container_name: vrising
+    restart: unless-stopped
+    network_mode: bridge
+    stop_grace_period: 30s
+    environment:
+      TZ: "America/New_York"
+      SERVERNAME: "AQrising"
+    volumes:
+      - /opt/stacks/vrising/data:/mnt/vrising/persistentdata
+      - /opt/stacks/vrising/server:/mnt/vrising/server
+    ports:
+      - "9876:9876/udp"
+      - "9877:9877/udp"
+
+  vrising-logger:
+    image: alpine:3.20
+    container_name: vrising-logger
+    restart: unless-stopped
+    depends_on:
+      - vrising
+    environment:
+      WEBHOOK_URL: "https://discord.com/api/webhooks/1443218450632937585/2hERhf9rYHuiOjCOjWI46_f373sSvmpOtYO1YVvPhtbwoeFNJdjuvaVUmhT6KBd_IZk_"
+    volumes:
+      - /opt/stacks/vrising/data:/mnt/vrising/persistentdata:ro
+    command:
+      - sh
+      - -c
+      - |
+        # Install curl + coreutils (stat, sort, etc.)
+        apk add --no-cache curl coreutils >/dev/null 2>&1
+
+        echo "📜 vrising-logger starting up..."
+
+        # Remember when this logger started
+        START_TS=$$(date +%s)
+        echo "🕒 Logger start timestamp: $$START_TS"
+
+        echo "🔎 Waiting for a *new* VRisingServer log (created after logger start)..."
+        LOG_FILE=""
+
+        # Wait for a log file created after logger start
+        while [ -z "$$LOG_FILE" ]; do
+          for f in /mnt/vrising/persistentdata/*VRisingServer.log; do
+            [ -e "$$f" ] || continue
+            FILE_TS=$$(stat -c %Y "$$f" 2>/dev/null || echo 0)
+            if [ "$$FILE_TS" -ge "$$START_TS" ]; then
+              LOG_FILE="$$f"
+            fi
+          done
+
+          [ -z "$$LOG_FILE" ] && sleep 2
+        done
+
+        echo "📄 Using log file: $$LOG_FILE"
+
+        # Tail the log and react to lines
+        tail -Fn0 "$$LOG_FILE" | while IFS= read -r line; do
+          case "$$line" in
+            *"[Server] Startup Completed"*)
+              curl -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"content\":\"✅ **VRising** server is online.\"}" \
+                "$$WEBHOOK_URL" >/dev/null || true
+              ;;
+
+            *"Shutting down Server"*)
+              curl -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"content\":\"🛑 **VRising** server is shutting down.\"}" \
+                "$$WEBHOOK_URL" >/dev/null || true
+              ;;
+
+            *"connected as ID"*)
+              PLAYER_NAME=$$(printf '%s\n' "$$line" | sed -n "s/.*Character: '\([^']*\)'.*/\1/p")
+
+              [ -z "$$PLAYER_NAME" ] && PLAYER_NAME="Unknown Player"
+
+              curl -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"content\":\"👤 **$$PLAYER_NAME** connected to VRising.\"}" \
+                "$$WEBHOOK_URL" >/dev/null || true
+              ;;
+              *" disconnected."*)
+
+              curl -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"content\":\"👋 A player disconnected from **VRising**.\"}" \
+                "$$WEBHOOK_URL" >/dev/null || true
+              ;;
+          esac
+        done
