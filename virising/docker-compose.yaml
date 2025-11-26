@@ -22,7 +22,7 @@ services:
     depends_on:
       - vrising
     environment:
-      WEBHOOK_URL: "https://discord.com/api/webhooks/1443218450632937585/2hERhf9rYHuiOjCOjWI46_f373sSvmpOtYO1YVvPhtbwoeFNJdjuvaVUmhT6KBd_IZk_"
+      WEBHOOK_URL: ""
     volumes:
       - /opt/stacks/vrising/data:/mnt/vrising/persistentdata:ro
     command:
