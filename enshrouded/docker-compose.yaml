@@ -27,3 +27,5 @@ services:
       - "15637:15637/tcp"
     volumes:
       - ./data:/home/steam/enshrouded # saves + config live here
+
+DONT USE THIS - ROLL A WINDOWS VM
