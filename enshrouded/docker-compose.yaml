@@ -8,9 +8,9 @@ services:
     restart: unless-stopped
     environment:
       TZ: "America/New_York"
-      SERVER_NAME: "AQ Shroud"
-      ADMIN_PASSWORD: "charcoal1"
-      PASSWORD: "charcoal"
+      SERVER_NAME: ""
+      ADMIN_PASSWORD: ""
+      PASSWORD: ""
       # Discord Webhook
       WEBHOOK_URL: ""
       WEBHOOK_ENABLED: "true"
