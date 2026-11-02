@@ -1,0 +1,19 @@
+[Unit]
+Description=Necesse dedicated server (tmux console, graceful save)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=necesse
+Group=necesse
+WorkingDirectory=/opt/necesse-ops
+EnvironmentFile=/home/necesse/.config/necesse-ops.env
+ExecStart=/opt/necesse-ops/scripts/start.sh
+ExecStop=/opt/necesse-ops/scripts/stop.sh
+TimeoutStartSec=900
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

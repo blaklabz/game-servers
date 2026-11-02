@@ -1,0 +1,17 @@
+[Unit]
+Description=Necesse Discord event relay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=necesse
+Group=necesse
+WorkingDirectory=/opt/necesse-ops/scripts
+EnvironmentFile=/home/necesse/.config/necesse-ops.env
+ExecStart=/usr/bin/python3 -u /opt/necesse-ops/scripts/relay.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
